@@ -1,4 +1,5 @@
-frontmatter = """---
+frontmatter = """
+---
 title: "$TITLE"
 date: $DATE
 draft: false
@@ -7,6 +8,8 @@ summary: "$IMAGE_COUNT"
 ---"""
 
 body = """
+<!-- GENERATED WITH knopper.icu.generator (https://github.com/slin63/s3-page-generator) -->
+
 <div class="grid-container">
   $IMAGES
 </div>"""

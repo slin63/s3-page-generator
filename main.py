@@ -2,7 +2,9 @@
 # 2. If any files less than <time> old, run, otherwise sleep
 import os
 import boto3
+import glob
 from typing import List, Dict
+
 
 from generators import gallery
 from helpers.logger import get_logger
@@ -18,6 +20,7 @@ class C:
     TEMP = str(os.getenv("TEMP"))
     CACHE = str(os.getenv("CACHE"))
     LIMIT = int(os.getenv("LIMIT"))
+    HUGODIR = str(os.getenv("HUGODIR"))
 
 
 class Album(object):
@@ -84,7 +87,7 @@ def separate_into_albums(d: List[Dict]) -> List[Album]:
 
     return album_objs
 
-
+# Initialize s3 resources and get relevant data
 s3 = boto3.client("s3")
 s3r = boto3.resource("s3")
 
@@ -93,9 +96,22 @@ albums = separate_into_albums(d)
 bucket_url = "https://s3.amazonaws.com/%s/" % C.BUCKET
 
 # Generate a page for each album
+pages = []
 for album in albums:
-    page = gallery.generate_page(
-        album, bucket_url, C, logger
-    )
+    pages.append((album, gallery.generate_page(
+                album, bucket_url, C, logger
+            )))
+    logger.info(f"Finish generating post for: {album.name}")
 
-    print(page)
+# Clear out existing pages
+for f in glob.glob(f"{C.HUGODIR}/*.md"):
+    os.remove(f)
+    logger.info(f"Removed old post: {f}")
+
+# Regenerate pages
+for album, page in pages:
+    p_path = os.path.join(C.HUGODIR, album.name) + ".md"
+    with open(p_path, "w") as f:
+        f.write(page)
+        logger.info(f"Created new post: {p_path}")
+
