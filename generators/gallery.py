@@ -1,8 +1,10 @@
 import math
 import requests
 import json
-import gallery_templates
+
 from random import choice
+from os import listdir, path, makedirs
+from os.path import isfile, join
 
 from PIL import Image, ExifTags
 from io import BytesIO
@@ -10,6 +12,7 @@ from io import BytesIO
 from datetime import datetime
 from typing import Dict
 
+from generators import gallery_templates
 from helpers.exif import generate_exif_dict
 
 
@@ -30,6 +33,8 @@ def generate_page(
     logger.info(
         f"Generating gallery for [album={album.name}] with {len(album.images)} images"
     )
+    cache = get_cache(C.CACHE)
+
     for image in album.images:
         image_url = bucket_url + image.key
         is_thumbnail = "_thumbs." in image_url.lower()
@@ -40,7 +45,7 @@ def generate_page(
         logger.info(f"{image.name} started processing.")
 
         date, date_pretty = populate_image_data(
-            image, album, bucket_url, C
+            image, album, bucket_url, C, cache, logger
         )
 
         # Set our album info to our first image
@@ -65,7 +70,9 @@ def generate_page(
 
     # Constructing page
     frontmatter = gallery_templates.frontmatter[:]
-    frontmatter = frontmatter.replace("$TITLE", album.name)
+    frontmatter = frontmatter.replace(
+        "$TITLE", album.name.lower()
+    )
     frontmatter = frontmatter.replace(
         "$DATE", str(album.date)
     )
@@ -94,17 +101,20 @@ def generate_page(
 
 
 def populate_image_data(
-    image: object, album: object, bucket_url: str, C: object
+    image: object,
+    album: object,
+    bucket_url: str,
+    C: object,
+    cache: Dict,
+    logger: object,
 ) -> object:
+    # Get image URLs
     image_url = bucket_url + image.key
-    r = requests.get(image_url)
-    b = BytesIO(r.content)
-    i = Image.open(b)
-    exif = generate_exif_dict(i)
-
-    # Populate image data
     image.url_thumbs = image_url
     image.url = root_url(image, bucket_url)
+
+    # Get exif data
+    exif = get_image_and_cache(image, cache, C, logger)
 
     # https://en.wikipedia.org/wiki/Mathematical_Alphanumeric_Symbols
     image.exif_data += f"{get_processed(exif, 'Model')} · "
@@ -129,6 +139,58 @@ def populate_image_data(
     )
 
     return image.date, image.date_pretty
+
+
+# Map of get_cached_key(image.name) to cachedir
+def get_cache(cachedir: str) -> Dict:
+    cache = {}
+    # Create cache directory if it doesn't exist already
+    if not path.exists(cachedir):
+        makedirs(cachedir)
+
+    for f in listdir(cachedir):
+        p = join(cachedir, f)
+        if not isfile(p):
+            continue
+
+        cache[f] = p
+
+    return cache
+
+
+def get_image_and_cache(
+    image: object, cache: Dict, C: object, logger: object
+) -> Dict:
+    # New image. Save to cache
+    cache_key = get_cached_key(image.key)
+    if cache_key not in cache:
+        logger.info(
+            f"{image.key} not in cache. Downloading."
+        )
+        r = requests.get(image.url_thumbs)
+        b = BytesIO(r.content)
+        i = Image.open(b)
+        exif_raw = i.info['exif']
+        exif = generate_exif_dict(i, close=False)
+
+        cached_filename = C.CACHE + get_cached_key(image.key)
+
+        if not path.exists(path.dirname(cached_filename)):
+            try:
+                makedirs(path.dirname(cached_filename))
+            except OSError as exc:
+                if exc.errno != errno.EEXIST:
+                    raise
+
+        i.save(cached_filename, "JPEG", exif=exif_raw)
+
+    # Cached image. Grab from cache.
+    else:
+        logger.info(f"{image.key} in cache. Grabbing.")
+        i = Image.open(cache[cache_key])
+        exif = generate_exif_dict(i, close=True)
+
+    return exif
 
 
 def get_processed(exif: Dict, key: str) -> str:
@@ -162,3 +224,7 @@ def root_url(image: object, bucket_url: str) -> str:
 
 def remove_thumbs_str(s: str) -> str:
     return s.replace("_thumbs", "")
+
+
+def get_cached_key(key):
+    return key.replace("/", "$$")

@@ -7,7 +7,9 @@ from PIL import Image
 import PIL.ExifTags
 
 
-def generate_exif_dict(image: Image) -> Dict:
+def generate_exif_dict(
+    image: Image, close: bool = True
+) -> Dict:
 
     """
     Generate a dictionary of dictionaries.
@@ -33,10 +35,13 @@ def generate_exif_dict(image: Image) -> Dict:
 
         for k, v in PIL.ExifTags.TAGS.items():
 
-            if k in exif_data_PIL:
-                value = exif_data_PIL[k]
-            else:
-                value = None
+            try:
+                if k in exif_data_PIL:
+                    value = exif_data_PIL[k]
+                else:
+                    value = None
+            except TypeError:
+                raise Exception(f"{image.filename}: invalid exif_data.")
 
             if len(str(value)) > 64:
                 value = str(value)[:65] + "..."
@@ -47,7 +52,8 @@ def generate_exif_dict(image: Image) -> Dict:
                 "processed": value,
             }
 
-        image.close()
+        if close:
+            image.close()
 
         exif_data = _process_exif_dict(exif_data)
 

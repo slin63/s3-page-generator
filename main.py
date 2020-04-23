@@ -16,6 +16,8 @@ class C:
     BUCKET = str(os.getenv("BUCKET"))
     UNPROCESSED = str(os.getenv("UNPROCESSED"))
     TEMP = str(os.getenv("TEMP"))
+    CACHE = str(os.getenv("CACHE"))
+    LIMIT = int(os.getenv("LIMIT"))
 
 
 class Album(object):
@@ -44,15 +46,18 @@ class Image(object):
         return f"{self.name}, {self.key}"
 
 
-def get_contents(s3):
+def get_contents(s3, limit):
     get_last_modified = lambda obj: int(
         obj["LastModified"].strftime("%s")
     )
     objs = s3.list_objects_v2(Bucket=C.BUCKET)["Contents"]
-
-    return [
+    objs = [
         obj for obj in sorted(objs, key=get_last_modified)
     ]
+
+    if limit == -1:
+        return objs
+    return objs[:limit]
 
 
 def separate_into_albums(d: List[Dict]) -> List[Album]:
@@ -83,15 +88,14 @@ def separate_into_albums(d: List[Dict]) -> List[Album]:
 s3 = boto3.client("s3")
 s3r = boto3.resource("s3")
 
-d = get_contents(s3)
+d = get_contents(s3, C.LIMIT)
 albums = separate_into_albums(d)
 bucket_url = "https://s3.amazonaws.com/%s/" % C.BUCKET
-
-# Generate a home page showing a single photo from all the albums
-# generate_index(albums)
 
 # Generate a page for each album
 for album in albums:
     page = gallery.generate_page(
         album, bucket_url, C, logger
     )
+
+    print(page)
