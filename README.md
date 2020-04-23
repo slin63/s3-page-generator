@@ -16,15 +16,12 @@ git clone https://github.com/slin63/knoppers-icu $HOME/knoppers.icu
 
 # Install dependencies
 pip3 install -r $HOME/knoppers.icu.gen/requirements.txt
-sudo apt-get install hugo
-sudo apt-get install libopenjp2-7-dev
-sudo apt-get install libtiff5
 
 # Update .env
 vim $HOME/knoppers.icu.gen/.env
 
 # Deploy
-. $HOME/knoppers.icu.gen/.env && $HOME/knoppers.icu.gen/deploy.sh
+. $HOME/projects/go/src/github.com/slin63/knoppers.icu.generator/.env && $HOME/projects/go/src/github.com/slin63/knoppers.icu.gen/deploy.sh
 ```
 
 
