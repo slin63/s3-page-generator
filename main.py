@@ -61,19 +61,6 @@ def get_all_s3_objects(s3, **base_kwargs):
             break
         continuation_token = response.get('NextContinuationToken')
 
-# def get_contents(s3, limit):
-#     get_last_modified = lambda obj: int(
-#         obj["LastModified"].strftime("%s")
-#     )
-#     objs = s3.list_objects_v2(Bucket=C.BUCKET)["Contents"]
-#     objs = [
-#         obj for obj in sorted(objs, key=get_last_modified)
-#     ]
-
-#     if limit == -1:
-#         return objs
-#     return objs[:limit]
-
 
 def separate_into_albums(d: List[Dict], limit: int) -> List[Album]:
     if limit == -1:

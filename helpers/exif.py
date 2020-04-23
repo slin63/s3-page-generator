@@ -124,15 +124,6 @@ def _process_exif_dict(exif_dict):
     date_format = "%Y:%m:%d %H:%M:%S"
 
     lookups = _create_lookups()
-    # dt = exif_dict["DateTime"].get("raw", "")
-    # if dt:
-    #     dt = dt.replace("\x00", "")
-    # exif_dict["DateTime"][
-    #     "processed"
-    # ] = datetime.datetime.strptime(
-    #     dt,
-    #     date_format,
-    # )
 
     if exif_dict["DateTimeOriginal"]["raw"]:
         exif_dict["DateTimeOriginal"][
@@ -146,12 +137,6 @@ def _process_exif_dict(exif_dict):
         ] = datetime.datetime.strptime(
             "1900:11:14 14:32:30", date_format
         )
-
-    # exif_dict["DateTimeDigitized"][
-    #     "processed"
-    # ] = datetime.datetime.strptime(
-    #     exif_dict["DateTimeDigitized"]["raw"], date_format
-    # )
 
     exif_dict["FNumber"]["processed"] = _derationalize(
         exif_dict["FNumber"]["raw"]
@@ -176,36 +161,6 @@ def _process_exif_dict(exif_dict):
         exif_dict["FocalLength"]["processed"]
     )
 
-    # exif_dict["FocalLengthIn35mmFilm"][
-    #     "processed"
-    # ] = "{}mm".format(
-    #     exif_dict["FocalLengthIn35mmFilm"]["raw"]
-    # )
-
-    # exif_dict["Orientation"]["processed"] = lookups[
-    #     "orientations"
-    # ][exif_dict["Orientation"]["raw"]]
-
-    # exif_dict["ResolutionUnit"]["processed"] = lookups[
-    #     "resolution_units"
-    # ][exif_dict["ResolutionUnit"]["raw"]]
-
-    # exif_dict["ExposureProgram"]["processed"] = lookups[
-    #     "exposure_programs"
-    # ][exif_dict["ExposureProgram"]["raw"]]
-
-    # exif_dict["MeteringMode"]["processed"] = lookups[
-    #     "metering_modes"
-    # ][exif_dict["MeteringMode"]["raw"]]
-
-    # exif_dict["XResolution"]["processed"] = int(
-    #     _derationalize(exif_dict["XResolution"]["raw"])
-    # )
-
-    # exif_dict["YResolution"]["processed"] = int(
-    #     _derationalize(exif_dict["YResolution"]["raw"])
-    # )
-
     exif_dict["ExposureTime"]["processed"] = _derationalize(
         exif_dict["ExposureTime"]["raw"]
     )
@@ -214,16 +169,5 @@ def _process_exif_dict(exif_dict):
             exif_dict["ExposureTime"]["processed"]
         ).limit_denominator(8000)
     )
-
-    # exif_dict["ExposureBiasValue"][
-    #     "processed"
-    # ] = _derationalize(
-    #     exif_dict["ExposureBiasValue"]["raw"]
-    # )
-    # exif_dict["ExposureBiasValue"][
-    #     "processed"
-    # ] = "{} EV".format(
-    #     exif_dict["ExposureBiasValue"]["processed"]
-    # )
 
     return exif_dict
