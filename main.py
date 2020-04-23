@@ -2,21 +2,26 @@
 # 2. If any files less than <time> old, run, otherwise sleep
 import os
 import boto3
-
 from typing import List, Dict
+
+from generators import gallery
 from helpers.logger import get_logger
 
+
 logger = get_logger("icu_generator")
+
 
 class C:
     BUCKET = str(os.getenv("BUCKET"))
     UNPROCESSED = str(os.getenv("UNPROCESSED"))
+    TEMP = str(os.getenv("TEMP"))
 
 
 class Album(object):
     def __init__(self, name):
-        self.name = name
-        self.images = []
+        self.name: str = name
+        self.images: List[Image] = []
+        self.date: str = None
 
     def __repr__(self):
         return f"{self.name}, {self.images}"
@@ -24,8 +29,12 @@ class Album(object):
 
 class Image(object):
     def __init__(self, name, key):
-        self.name = name
-        self.key = key
+        self.name: str = name
+        self.key: str = key
+        self.exif_data: str = ""
+        self.exif_data_2: str = ""
+        self.url: str = None
+        self.url_thumbs: str = None
 
     def __repr__(self):
         return f"{self.name}, {self.key}"
@@ -46,12 +55,19 @@ def separate_into_albums(d: List[Dict]) -> List[Album]:
     albums = {}
     album_objs = []
     for obj in d:
-        key = obj["Key"]
-        album_name, name = key.split("/")
+        try:
+            key = obj["Key"]
+            album_name, name = key.split("/")
+        except Exception as exc:
+            import ipdb
+
+            ipdb.set_trace()  # breakpoint 2990b485x //
         if album_name in C.UNPROCESSED:
             continue
 
-        albums[album_name] = albums.get(album_name, []) + [Image(name, key)]
+        albums[album_name] = albums.get(album_name, []) + [
+            Image(name, key)
+        ]
 
     for k, v in albums.items():
         album = Album(k)
@@ -66,9 +82,11 @@ s3r = boto3.resource("s3")
 
 d = get_contents(s3)
 albums = separate_into_albums(d)
+bucket_url = "https://s3.amazonaws.com/%s/" % C.BUCKET
 
 # Generate a home page showing a single photo from all the albums
-generate_index(albums)
+# generate_index(albums)
 
 # Generate a page for each album
-generate_pages(albums)
+for album in albums:
+    page = gallery.generate_page(album, bucket_url, C)
