@@ -21,7 +21,7 @@ pip3 install -r $HOME/knoppers.icu.gen/requirements.txt
 vim $HOME/knoppers.icu.gen/.env
 
 # Deploy
-. $HOME/projects/go/src/github.com/slin63/knoppers.icu.generator/.env && $HOME/projects/go/src/github.com/slin63/knoppers.icu.gen/deploy.sh
+. $HOME/projects/go/src/github.com/slin63/knoppers.icu.generator/.env && $HOME/projects/go/src/github.com/slin63/knoppers.icu.generator/deploy.sh
 ```
 
 
