@@ -6,6 +6,7 @@ from typing import List, Dict
 
 from generators import gallery
 from helpers.logger import get_logger
+from datetime import datetime
 
 
 logger = get_logger("icu_generator")
@@ -21,7 +22,9 @@ class Album(object):
     def __init__(self, name):
         self.name: str = name
         self.images: List[Image] = []
-        self.date: str = None
+        self.date: datetime = None
+        self.date_pretty: str = ""
+        self.cover_image: Image = None
 
     def __repr__(self):
         return f"{self.name}, {self.images}"
@@ -32,7 +35,8 @@ class Image(object):
         self.name: str = name
         self.key: str = key
         self.exif_data: str = ""
-        self.exif_data_2: str = ""
+        self.date_pretty: str = ""
+        self.date: datetime = None
         self.url: str = None
         self.url_thumbs: str = None
 
@@ -55,13 +59,8 @@ def separate_into_albums(d: List[Dict]) -> List[Album]:
     albums = {}
     album_objs = []
     for obj in d:
-        try:
-            key = obj["Key"]
-            album_name, name = key.split("/")
-        except Exception as exc:
-            import ipdb
-
-            ipdb.set_trace()  # breakpoint 2990b485x //
+        key = obj["Key"]
+        album_name, name = key.split("/")
         if album_name in C.UNPROCESSED:
             continue
 
@@ -89,4 +88,6 @@ bucket_url = "https://s3.amazonaws.com/%s/" % C.BUCKET
 
 # Generate a page for each album
 for album in albums:
-    page = gallery.generate_page(album, bucket_url, C)
+    page = gallery.generate_page(
+        album, bucket_url, C, logger
+    )
