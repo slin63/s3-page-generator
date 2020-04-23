@@ -2,6 +2,7 @@ import math
 import requests
 import json
 import gallery_templates
+from random import choice
 
 from PIL import Image, ExifTags
 from io import BytesIO
@@ -46,7 +47,6 @@ def generate_page(
         if not first:
             album.date = date
             album.date_pretty = date_pretty
-            album.cover_image = image
             first = image
 
         # Construct HTML for image
@@ -69,8 +69,22 @@ def generate_page(
     frontmatter = frontmatter.replace(
         "$DATE", str(album.date)
     )
+
+    # Pick a random image for our cover.
+    # Keeps things interesting for me!
     frontmatter = frontmatter.replace(
-        "$COVER_URL", album.cover_image.url_thumbs
+        "$COVER_URL",
+        choice(
+            list(
+                filter(
+                    lambda x: "_thumbs" in x.name,
+                    album.images,
+                )
+            )
+        ).url_thumbs,
+    )
+    frontmatter = frontmatter.replace(
+        "$IMAGE_COUNT", f"{len(album.images)} images"
     )
 
     body = gallery_templates.body[:]
@@ -134,7 +148,7 @@ def human_datetime(dt: datetime) -> str:
     month = dt.strftime("%B")
     day = dt.strftime("%d")
     day = ordinal(int(day.lstrip("0")))
-    time = dt.strftime("%I:%M%p")
+    time = dt.strftime("%I:%M%p").lstrip("0")
     year = dt.strftime("%Y")
 
     fancy_date = f"{month} {day} {time}, {year}"
