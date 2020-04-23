@@ -109,6 +109,9 @@ for f in glob.glob(f"{C.HUGODIR}/*.md"):
     logger.info(f"Removed old post: {f}")
 
 # Regenerate pages
+if not os.path.exists(C.HUGODIR):
+    os.makedirs(C.HUGODIR)
+
 for album, page in pages:
     p_path = os.path.join(C.HUGODIR, album.name) + ".md"
     with open(p_path, "w") as f:
