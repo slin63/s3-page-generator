@@ -49,23 +49,39 @@ class Image(object):
         return f"{self.name}, {self.key}"
 
 
-def get_contents(s3, limit):
-    get_last_modified = lambda obj: int(
-        obj["LastModified"].strftime("%s")
-    )
-    objs = s3.list_objects_v2(Bucket=C.BUCKET)["Contents"]
-    objs = [
-        obj for obj in sorted(objs, key=get_last_modified)
-    ]
+def get_all_s3_objects(s3, **base_kwargs):
+    continuation_token = None
+    while True:
+        list_kwargs = dict(MaxKeys=1000, **base_kwargs)
+        if continuation_token:
+            list_kwargs['ContinuationToken'] = continuation_token
+        response = s3.list_objects_v2(**list_kwargs)
+        yield from response.get('Contents', [])
+        if not response.get('IsTruncated'):  # At the end of the list?
+            break
+        continuation_token = response.get('NextContinuationToken')
 
+# def get_contents(s3, limit):
+#     get_last_modified = lambda obj: int(
+#         obj["LastModified"].strftime("%s")
+#     )
+#     objs = s3.list_objects_v2(Bucket=C.BUCKET)["Contents"]
+#     objs = [
+#         obj for obj in sorted(objs, key=get_last_modified)
+#     ]
+
+#     if limit == -1:
+#         return objs
+#     return objs[:limit]
+
+
+def separate_into_albums(d: List[Dict], limit: int) -> List[Album]:
     if limit == -1:
-        return objs
-    return objs[:limit]
+        limit = float('inf')
 
-
-def separate_into_albums(d: List[Dict]) -> List[Album]:
     albums = {}
     album_objs = []
+    count = 0
     for obj in d:
         key = obj["Key"]
         if C.UNPROCESSED in key and key != C.UNPROCESSED:
@@ -79,6 +95,9 @@ def separate_into_albums(d: List[Dict]) -> List[Album]:
         albums[album_name] = albums.get(album_name, []) + [
             Image(name, key)
         ]
+        count += 1
+        if count > limit:
+            break
 
     for k, v in albums.items():
         album = Album(k)
@@ -91,8 +110,9 @@ def separate_into_albums(d: List[Dict]) -> List[Album]:
 s3 = boto3.client("s3")
 s3r = boto3.resource("s3")
 
-d = get_contents(s3, C.LIMIT)
-albums = separate_into_albums(d)
+# d = get_contents(s3, C.LIMIT)
+d = get_all_s3_objects(s3, Bucket=C.BUCKET)
+albums = separate_into_albums(d, C.LIMIT)
 bucket_url = "https://s3.amazonaws.com/%s/" % C.BUCKET
 
 # Generate a page for each album
