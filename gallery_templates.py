@@ -2,6 +2,7 @@ frontmatter = """---
 title: "$TITLE"
 date: $DATE
 draft: false
+cover: "$COVER_URL"
 ---"""
 
 body = """

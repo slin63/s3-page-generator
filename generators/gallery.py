@@ -69,6 +69,9 @@ def generate_page(
     frontmatter = frontmatter.replace(
         "$DATE", str(album.date)
     )
+    frontmatter = frontmatter.replace(
+        "$COVER_URL", album.cover_image.url_thumbs
+    )
 
     body = gallery_templates.body[:]
     body = body.replace("$IMAGES", "\n".join(images))
