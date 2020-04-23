@@ -59,7 +59,8 @@ def generate_exif_dict(image: Image) -> Dict:
 
 
 def _derationalize(rational):
-
+    if not rational:
+        return -1
     return rational[0] / rational[1]
 
 

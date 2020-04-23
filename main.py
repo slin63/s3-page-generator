@@ -60,6 +60,10 @@ def separate_into_albums(d: List[Dict]) -> List[Album]:
     album_objs = []
     for obj in d:
         key = obj["Key"]
+        if C.UNPROCESSED in key and key != C.UNPROCESSED:
+            raise Exception(
+                f"Files still sitting in unprocessed queue: {key}. Please process or remove file before trying again."
+            )
         album_name, name = key.split("/")
         if album_name in C.UNPROCESSED:
             continue
