@@ -6,7 +6,7 @@ timestamp() {
 }
 
 echo "$(timestamp): [CREATING HUGO PAGES FROM S3]"
-. $HOME/knoppers.icu.generator/.env && python main.py
+python3 $HOME/knoppers.icu.gen/main.py
 
 echo "$(timestamp): [BUILDING HUGO SITE]"
 hugo -s $HOME/knoppers.icu
