@@ -2,7 +2,7 @@
 
 Generates Hugo pages for [knoppers.icu](https://github.com/slin63/knoppers-icu), a static photo gallery / frontend for my photography S3 bucket.
 
-Pages receive a random cover photo on each regeneration.
+Read about the project here: [chronicpizza.net/posts/knoppersicu](https://www.chronicpizza.net/posts/knoppersicu/).
 
 ## Setup:
 
