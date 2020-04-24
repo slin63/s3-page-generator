@@ -170,8 +170,11 @@ def get_image_and_cache(
         r = requests.get(image.url_thumbs)
         b = BytesIO(r.content)
         i = Image.open(b)
-        exif_raw = i.info['exif']
-        exif = generate_exif_dict(i, close=False)
+        has_exif = bool(i.info.get('exif', False))
+
+        if has_exif:
+            exif_raw = i.info['exif']
+            exif = generate_exif_dict(i, close=False)
 
         cached_filename = C.CACHE + get_cached_key(image.key)
 
@@ -188,7 +191,15 @@ def get_image_and_cache(
     else:
         logger.info(f"{image.key} in cache. Grabbing.")
         i = Image.open(cache[cache_key])
-        exif = generate_exif_dict(i, close=True)
+        has_exif = bool(i.info.get('exif', False))
+
+        if has_exif:
+            exif_raw = i.info['exif']
+            exif = generate_exif_dict(i, close=True)
+
+    # Check for corrupted exif data
+    if not get_processed(exif, 'ISOSpeedRatings'):
+        return None
 
     return exif
 
