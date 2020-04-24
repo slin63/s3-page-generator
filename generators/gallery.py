@@ -91,7 +91,7 @@ def generate_page(
         ).url_thumbs,
     )
     frontmatter = frontmatter.replace(
-        "$IMAGE_COUNT", f"{len(album.images)} images"
+        "$IMAGE_COUNT", f"{len(images)} images"
     )
 
     body = gallery_templates.body[:]
