@@ -116,27 +116,32 @@ def populate_image_data(
     # Get exif data
     exif = get_image_and_cache(image, cache, C, logger)
 
-    # https://en.wikipedia.org/wiki/Mathematical_Alphanumeric_Symbols
-    image.exif_data += f"{get_processed(exif, 'Model')} · "
-    image.exif_data += (
-        f"{get_processed(exif, 'FocalLength')} · "
-    )
-    image.exif_data += f"{get_processed(exif, 'FNumber').replace('f', 'ƒ')} · "
-    image.exif_data += (
-        f"{get_processed(exif, 'ExposureTime')}𝙨 · "
-    )
+    # Check if image had exif data
+    if exif:
+        # https://en.wikipedia.org/wiki/Mathematical_Alphanumeric_Symbols
+        image.exif_data += f"{get_processed(exif, 'Model')} · "
+        image.exif_data += (
+            f"{get_processed(exif, 'FocalLength')} · "
+        )
+        image.exif_data += f"{get_processed(exif, 'FNumber').replace('f', 'ƒ')} · "
+        image.exif_data += (
+            f"{get_processed(exif, 'ExposureTime')}𝗌 · "
+        )
 
-    image.date = get_processed(exif, "DateTimeOriginal")
-    image.date_pretty += f"{human_datetime(get_processed(exif, 'DateTimeOriginal'))}"
+        image.date = get_processed(exif, "DateTimeOriginal")
+        image.date_pretty += f"{human_datetime(get_processed(exif, 'DateTimeOriginal'))}"
 
-    # Lowercase because we're chill
-    image.exif_data = image.exif_data.lower()
-    image.date_pretty = image.date_pretty.lower()
+        # Lowercase because we're chill
+        image.exif_data = image.exif_data.lower()
+        image.date_pretty = image.date_pretty.lower()
 
-    # Add ISO last to stay capitalized
-    image.exif_data += (
-        f"{get_processed(exif, 'ISOSpeedRatings')}ISO"
-    )
+        # Add ISO last to stay capitalized
+        image.exif_data += (
+            f"ISO{get_processed(exif, 'ISOSpeedRatings')}"
+        )
+    else:
+        image.exif_data = "unknown · unknown · unknown"
+        image.date_pretty = "unknown, unknown"
 
     return image.date, image.date_pretty
 
@@ -163,6 +168,7 @@ def get_image_and_cache(
 ) -> Dict:
     # New image. Save to cache
     cache_key = get_cached_key(image.key)
+    exif = {}
     if cache_key not in cache:
         logger.info(
             f"{image.key} not in cache. Downloading."
@@ -185,7 +191,11 @@ def get_image_and_cache(
                 if exc.errno != errno.EEXIST:
                     raise
 
-        i.save(cached_filename, "JPEG", exif=exif_raw)
+        if has_exif:
+            i.save(cached_filename, "JPEG", exif=exif_raw)
+        else:
+            i.save(cached_filename, "JPEG")
+
 
     # Cached image. Grab from cache.
     else:
@@ -205,7 +215,7 @@ def get_image_and_cache(
 
 
 def get_processed(exif: Dict, key: str) -> str:
-    return exif[key]["processed"]
+    return exif.get(key, {}).get("processed")
 
 
 def human_datetime(dt: datetime) -> str:
