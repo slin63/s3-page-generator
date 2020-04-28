@@ -12,7 +12,7 @@ aws configure
 
 # Grab repoes
 git clone https://github.com/slin63/s3-page-generator $HOME/knoppers.icu.gen
-git clone https://github.com/slin63/knoppers-icu $HOME/knoppers.icu
+git clone --recursive https://github.com/slin63/knoppers-icu $HOME/knoppers.icu
 
 # Install dependencies
 pip3 install -r $HOME/knoppers.icu.gen/requirements.txt
