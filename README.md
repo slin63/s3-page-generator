@@ -1,6 +1,6 @@
 # knoppers.icu.generator
 
-Generates Hugo pages for [knoppers.icu](https://github.com/slin63/knoppers-icu), a static photo gallery / frontend for my photography S3 bucket.
+Generates Hugo pages for [knoppers.icu](https://github.com/slin63/knoppers-icu), a static photo gallery / frontend for my photography S3 bucket, updated automatically by a cronjob on an EC2 instance.
 
 Read about the project here: [chronicpizza.net/posts/knoppersicu](https://www.chronicpizza.net/posts/knoppersicu/).
 
