@@ -4,6 +4,8 @@ Generates Hugo pages for [knoppers.icu](https://github.com/slin63/knoppers-icu),
 
 Read about the project here: [chronicpizza.net/posts/knoppersicu](https://www.chronicpizza.net/posts/knoppersicu/).
 
+![grabbing images, generating markdown files, and deploying the hugo site](./kn.gif)
+
 ## Setup:
 
 ```
