@@ -79,16 +79,16 @@ def generate_page(
 
     # Pick a random image for our cover.
     # Keeps things interesting for me!
-    frontmatter = frontmatter.replace(
-        "$COVER_URL",
-        choice(
-            list(
-                filter(
-                    lambda x: "_thumbs" in x.name,
-                    album.images,
-                )
+    random_thumbnail = choice(
+        list(
+            filter(
+                lambda x: "_thumbs" in x.name, album.images,
             )
-        ).url_thumbs,
+        )
+    ).url_thumbs
+
+    frontmatter = frontmatter.replace(
+        "$COVER_URL", random_thumbnail,
     )
     frontmatter = frontmatter.replace(
         "$IMAGE_COUNT", f"{len(images)} images"
@@ -119,7 +119,9 @@ def populate_image_data(
     # Check if image had exif data
     if exif:
         # https://en.wikipedia.org/wiki/Mathematical_Alphanumeric_Symbols
-        image.exif_data += f"{get_processed(exif, 'Model')} · "
+        image.exif_data += (
+            f"{get_processed(exif, 'Model')} · "
+        )
         image.exif_data += (
             f"{get_processed(exif, 'FocalLength')} · "
         )
@@ -176,13 +178,15 @@ def get_image_and_cache(
         r = requests.get(image.url_thumbs)
         b = BytesIO(r.content)
         i = Image.open(b)
-        has_exif = bool(i.info.get('exif', False))
+        has_exif = bool(i.info.get("exif", False))
 
         if has_exif:
-            exif_raw = i.info['exif']
+            exif_raw = i.info["exif"]
             exif = generate_exif_dict(i, close=False)
 
-        cached_filename = C.CACHE + get_cached_key(image.key)
+        cached_filename = C.CACHE + get_cached_key(
+            image.key
+        )
 
         if not path.exists(path.dirname(cached_filename)):
             try:
@@ -196,19 +200,18 @@ def get_image_and_cache(
         else:
             i.save(cached_filename, "JPEG")
 
-
     # Cached image. Grab from cache.
     else:
         logger.info(f"{image.key} in cache. Grabbing.")
         i = Image.open(cache[cache_key])
-        has_exif = bool(i.info.get('exif', False))
+        has_exif = bool(i.info.get("exif", False))
 
         if has_exif:
-            exif_raw = i.info['exif']
+            exif_raw = i.info["exif"]
             exif = generate_exif_dict(i, close=True)
 
     # Check for corrupted exif data
-    if not get_processed(exif, 'ISOSpeedRatings'):
+    if not get_processed(exif, "ISOSpeedRatings"):
         return None
 
     return exif

@@ -5,11 +5,15 @@ date: $DATE
 draft: false
 description: "$COVER_URL"
 summary: "$IMAGE_COUNT"
----"""
+---
+<meta property="og:image" content="$COVER_URL">
+<meta property="og:title" content="$TITLE" />
+<meta property="og:description" content="some photos, brace yourself" />
+
+"""
 
 body = """
 <!-- GENERATED WITH knopper.icu.generator (https://github.com/slin63/s3-page-generator) -->
-
 <div class="grid-container">
   $IMAGES
 </div>"""
