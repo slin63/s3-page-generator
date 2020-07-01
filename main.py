@@ -54,17 +54,17 @@ def get_all_s3_objects(s3, **base_kwargs):
     while True:
         list_kwargs = dict(MaxKeys=1000, **base_kwargs)
         if continuation_token:
-            list_kwargs['ContinuationToken'] = continuation_token
+            list_kwargs["ContinuationToken"] = continuation_token
         response = s3.list_objects_v2(**list_kwargs)
-        yield from response.get('Contents', [])
-        if not response.get('IsTruncated'):  # At the end of the list?
+        yield from response.get("Contents", [])
+        if not response.get("IsTruncated"):  # At the end of the list?
             break
-        continuation_token = response.get('NextContinuationToken')
+        continuation_token = response.get("NextContinuationToken")
 
 
 def separate_into_albums(d: List[Dict], limit: int) -> List[Album]:
     if limit == -1:
-        limit = float('inf')
+        limit = float("inf")
 
     albums = {}
     album_objs = []
@@ -93,6 +93,7 @@ def separate_into_albums(d: List[Dict], limit: int) -> List[Album]:
 
     return album_objs
 
+
 # Initialize s3 resources and get relevant data
 s3 = boto3.client("s3")
 s3r = boto3.resource("s3")
@@ -105,9 +106,9 @@ bucket_url = "https://s3.amazonaws.com/%s/" % C.BUCKET
 # Generate a page for each album
 pages = []
 for album in albums:
-    pages.append((album, gallery.generate_page(
-                album, bucket_url, C, logger
-            )))
+    pages.append(
+        (album, gallery.generate_page(album, bucket_url, C, logger))
+    )
     logger.info(f"Finish generating post for: {album.name}")
 
 # Clear out existing pages
@@ -124,4 +125,3 @@ for album, page in pages:
     with open(p_path, "w") as f:
         f.write(page)
         logger.info(f"Created new post: {p_path}")
-

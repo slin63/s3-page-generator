@@ -3,7 +3,7 @@ import requests
 import json
 
 from random import choice
-from os import listdir, path, makedirs
+from os import listdir, path, makedirs, stat
 from os.path import isfile, join
 
 from PIL import Image, ExifTags
@@ -15,18 +15,14 @@ from typing import Dict
 from generators import gallery_templates
 from helpers.exif import generate_exif_dict
 
+# from ..main import Album, C
 
 # Gather the following:
 # - album name: album.name
 # - date: datetime of first photo
 # - URL, thumbnail URL of each photo
 # - exif data for photo: have to download each thumbnail and read EXIF data
-def generate_page(
-    album: object,
-    bucket_url: str,
-    C: object,
-    logger: object,
-) -> str:
+def generate_page(album, bucket_url: str, C, logger: object,) -> str:
     first = None
     images = []
     count = 0
@@ -60,9 +56,7 @@ def generate_page(
         t = t.replace("$URL", image.url)
         t = t.replace("$EXIF_DATA", image.exif_data)
         t = t.replace("$DATE_PRETTY", image.date_pretty)
-        t = t.replace(
-            "$IMAGE_NAME", remove_thumbs_str(image.name)
-        )
+        t = t.replace("$IMAGE_NAME", remove_thumbs_str(image.name))
 
         images.append(t)
 
@@ -70,26 +64,16 @@ def generate_page(
 
     # Constructing page
     frontmatter = gallery_templates.frontmatter[:]
-    frontmatter = frontmatter.replace(
-        "$TITLE", album.name.lower()
-    )
-    frontmatter = frontmatter.replace(
-        "$DATE", str(album.date)
-    )
+    frontmatter = frontmatter.replace("$TITLE", album.name.lower())
+    frontmatter = frontmatter.replace("$DATE", str(album.date))
 
     # Pick a random image for our cover.
     # Keeps things interesting for me!
     random_thumbnail = choice(
-        list(
-            filter(
-                lambda x: "_thumbs" in x.name, album.images,
-            )
-        )
+        list(filter(lambda x: "_thumbs" in x.name, album.images,))
     ).url_thumbs
 
-    frontmatter = frontmatter.replace(
-        "$COVER_URL", random_thumbnail,
-    )
+    frontmatter = frontmatter.replace("$COVER_URL", random_thumbnail,)
     frontmatter = frontmatter.replace(
         "$IMAGE_COUNT", f"{len(images)} images"
     )
@@ -112,20 +96,17 @@ def populate_image_data(
     image_url = bucket_url + image.key
     image.url_thumbs = image_url
     image.url = root_url(image, bucket_url)
-
     # Get exif data
-    exif = get_image_and_cache(image, cache, C, logger)
+    exif, file = get_image_and_cache(image, cache, C, logger)
 
     # Check if image had exif data
     if exif:
         # https://en.wikipedia.org/wiki/Mathematical_Alphanumeric_Symbols
+        image.exif_data += f"{get_processed(exif, 'Model')} · "
+        image.exif_data += f"{get_processed(exif, 'FocalLength')} · "
         image.exif_data += (
-            f"{get_processed(exif, 'Model')} · "
+            f"{get_processed(exif, 'FNumber').replace('f', 'ƒ')} · "
         )
-        image.exif_data += (
-            f"{get_processed(exif, 'FocalLength')} · "
-        )
-        image.exif_data += f"{get_processed(exif, 'FNumber').replace('f', 'ƒ')} · "
         image.exif_data += (
             f"{get_processed(exif, 'ExposureTime')}𝗌 · "
         )
@@ -142,8 +123,10 @@ def populate_image_data(
             f"ISO{get_processed(exif, 'ISOSpeedRatings')}"
         )
     else:
+        file_stat = stat(file)
+        image.date = datetime.fromtimestamp(file_stat.st_birthtime)
+        image.date_pretty = f"{human_datetime(image.date)}"
         image.exif_data = "unknown · unknown · unknown"
-        image.date_pretty = "unknown, unknown"
 
     return image.date, image.date_pretty
 
@@ -171,10 +154,9 @@ def get_image_and_cache(
     # New image. Save to cache
     cache_key = get_cached_key(image.key)
     exif = {}
+    i = None
     if cache_key not in cache:
-        logger.info(
-            f"{image.key} not in cache. Downloading."
-        )
+        logger.info(f"{image.key} not in cache. Downloading.")
         r = requests.get(image.url_thumbs)
         b = BytesIO(r.content)
         i = Image.open(b)
@@ -184,9 +166,7 @@ def get_image_and_cache(
             exif_raw = i.info["exif"]
             exif = generate_exif_dict(i, close=False)
 
-        cached_filename = C.CACHE + get_cached_key(
-            image.key
-        )
+        cached_filename = C.CACHE + get_cached_key(image.key)
 
         if not path.exists(path.dirname(cached_filename)):
             try:
@@ -212,9 +192,9 @@ def get_image_and_cache(
 
     # Check for corrupted exif data
     if not get_processed(exif, "ISOSpeedRatings"):
-        return None
+        return None, cache.get(cache_key) or cached_filename
 
-    return exif
+    return exif, cache.get(cache_key) or cached_filename
 
 
 def get_processed(exif: Dict, key: str) -> str:
