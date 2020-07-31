@@ -67,7 +67,8 @@ def generate_exif_dict(image: Image, close: bool = True) -> Dict:
 def _derationalize(rational):
     if not rational:
         return -1
-    return rational[0] / rational[1]
+    rational = rational.real
+    return rational.numerator / rational.denominator
 
 
 def _create_lookups():
