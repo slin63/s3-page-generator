@@ -6,6 +6,9 @@ Read about the project here: [chronicpizza.net/posts/knoppersicu](https://www.ch
 
 ![grabbing images, generating markdown files, and deploying the hugo site](./kn.gif)
 
+## Debugging:
+`. $HOME/projects/go/src/github.com/slin63/knoppers.icu.generator/.env && $HOME/projects/go/src/github.com/slin63/knoppers.icu.generator/deploy_test.sh`
+
 ## Setup:
 
 ```

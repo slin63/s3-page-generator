@@ -75,10 +75,11 @@ def separate_into_albums(d: List[Dict], limit: int) -> List[Album]:
             raise Exception(
                 f"Files still sitting in unprocessed queue: {key}. Please process or remove file before trying again."
             )
-        album_name, name = key.split("/")
-        if album_name in C.UNPROCESSED:
+        # Parse the directory of the file, ignoring files that are not in a directory
+        split_key = key.split("/")
+        if split_key[0] in C.UNPROCESSED or len(split_key) < 2:
             continue
-
+        album_name, name = key.split("/")
         albums[album_name] = albums.get(album_name, []) + [
             Image(name, key)
         ]

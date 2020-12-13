@@ -8,7 +8,8 @@ timestamp() {
 BASE="/Users/seanlin/projects/go/src/github.com/slin63"
 
 echo "$(timestamp): [CREATING HUGO PAGES FROM S3]"
-/usr/local/bin/python3 $BASE/knoppers.icu.generator/main.py
+/Users/seanlin/.pyenv/versions/3.7.5/bin/python $BASE/knoppers.icu.generator/main.py
+
 
 echo "$(timestamp): [BUILDING HUGO SITE]"
 /usr/local/bin/hugo -s $BASE/knoppers.icu
