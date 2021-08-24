@@ -31,36 +31,69 @@ def generate_page(album, bucket_url: str, C, logger: object,) -> str:
     )
     cache = get_cache(C.CACHE)
 
+
     for image in album.images:
         image_url = bucket_url + image.key
-        is_thumbnail = "_thumbs." in image_url.lower()
-
-        if not is_thumbnail:
-            continue
-
         logger.info(f"{image.name} started processing.")
 
-        date, date_pretty = populate_image_data(
-            image, album, bucket_url, C, cache, logger
-        )
+        # .NEF PATH
+        if "film" not in album.name:
+            is_thumbnail = "_thumbs." in image_url.lower()
 
-        # Set our album info to our first image
-        if not first:
-            album.date = date
-            album.date_pretty = date_pretty
-            first = image
+            if not is_thumbnail:
+                continue
 
-        # Construct HTML for image
-        t = gallery_templates.image[:]
-        t = t.replace("$URL_THUMBS", image.url_thumbs)
-        t = t.replace("$URL", image.url)
-        t = t.replace("$EXIF_DATA", image.exif_data)
-        t = t.replace("$DATE_PRETTY", image.date_pretty)
-        t = t.replace("$IMAGE_NAME", remove_thumbs_str(image.name))
+            date, date_pretty = populate_image_data(
+                image, album, bucket_url, C, cache, logger
+            )
 
-        images.append(t)
+            # Set our album info to our first image
+            if not first:
+                album.date = date
+                album.date_pretty = date_pretty
+                first = image
 
-        logger.info(f"{image.name} finished processing.")
+            # Construct HTML for image
+            t = gallery_templates.image[:]
+            t = t.replace("$URL_THUMBS", image.url_thumbs)
+            t = t.replace("$URL", image.url)
+            t = t.replace("$EXIF_DATA", image.exif_data)
+            t = t.replace("$DATE_PRETTY", image.date_pretty)
+            t = t.replace("$IMAGE_NAME", remove_thumbs_str(image.name))
+
+            images.append(t)
+
+            logger.info(f"{image.name} finished processing.")
+
+        # FILM PATH
+        else:
+            # import ipdb; ipdb.set_trace()
+            is_thumbnail = "_thumbs." in image_url.lower()
+
+            if not is_thumbnail:
+                continue
+
+            date, date_pretty = populate_image_data_film(
+                image, album, bucket_url, C, cache, logger
+            )
+
+            if not first:
+                album.date = date
+                album.date_pretty = date_pretty
+                first = image
+
+            # Construct HTML for image
+            t = gallery_templates.image[:]
+            t = t.replace("$URL_THUMBS", image.url_thumbs)
+            t = t.replace("$URL", image.url)
+            t = t.replace("$EXIF_DATA", image.exif_data)
+            t = t.replace("$DATE_PRETTY", image.date_pretty)
+            t = t.replace("$IMAGE_NAME", image.name)
+
+            images.append(t)
+
+            logger.info(f"{image.name} finished processing.")
+
 
     # Constructing page
     frontmatter = gallery_templates.frontmatter[:]
@@ -127,6 +160,27 @@ def populate_image_data(
         image.date = datetime.fromtimestamp(file_stat.st_birthtime)
         image.date_pretty = f"{human_datetime(image.date)}"
         image.exif_data = "unknown · unknown · unknown"
+
+    return image.date, image.date_pretty
+
+def populate_image_data_film(
+    image: object,
+    album: object,
+    bucket_url: str,
+    C: object,
+    cache: Dict,
+    logger: object,
+) -> object:
+    # Get image URLs
+    image_url = bucket_url + image.key
+    image.url_thumbs = image_url
+    image.url = root_url(image, bucket_url)
+
+    image.date = datetime.strptime(album.name.split('_')[0], '%m-%d-%y')
+    image.date_pretty = human_datetime(image.date)
+
+    film_stock = album.name.split('_')[2].replace('-', " ")
+    image.exif_data = film_stock
 
     return image.date, image.date_pretty
 
